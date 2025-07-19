@@ -7,6 +7,9 @@
 clearvars; clc; close all;
 config_figures;
 this_dir = "interaction_free_dynamics/";
+if ~exist(this_dir, 'dir')
+    mkdir(this_dir)
+end
 breakcolor = "#A2142F";
 coloru  = "#53A966";
 colorux  = "#c3e166";

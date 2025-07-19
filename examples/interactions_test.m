@@ -2,6 +2,13 @@ clearvars; clc; close all;
 config_figures;
 this_dir = "initial_interactions/";
 
+if ~exist(this_dir, 'dir')
+    mkdir(this_dir)
+end
+
+% !! The following requires chebfun on MATLAB's path !!
+
+
 syms Sx St Sepsilon Sux
 
 A(Sux,Sepsilon) = Sux+Sepsilon*Sux^3/3;

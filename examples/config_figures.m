@@ -12,6 +12,12 @@ set(groot, 'defaultTextboxshapeInterpreter','latex');
 set(groot, 'defaultTiledlayoutTileSpacing', 'tight');
 set(groot, 'defaultTiledlayoutPadding', 'tight');
 
+% Reset figure behaviour to that of 2025a and earlier
+set(groot, "defaultFigurePosition", [680 458 560 420])
+set(groot, "defaultFigureWindowStyle", "normal")
+set(groot, "defaultFigureMenuBar", "figure");
+set(groot, "defaultFigureToolbar", "figure");
+
 % line settings
 colororder({'red','green','blue','cyan','magenta'}) % don't use yellow for the line color
 set(groot, 'defaultLineLineWidth', 2)
