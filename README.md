@@ -8,5 +8,3 @@ Some highlights:
 The example files test the accuracy in our computed solutions. This includes a comparison against:
 1. The implementation of the method of lines from "Invariant Conservation Law-Preserving Discretizations of Linear and Nonlinear Wave Equations" by Alexei et. al. This uses a stencil designed specifically to respect conserved quanitites of a second-order equation $u_{tt}=(1+\epsilon u_x^2)u_{xx}.$
 2. TODO
-
-![hippo](https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXczdWNmM2V4OHp1YngwOGIyaXp1OHBnd3I0dndnZmZiOW9yMXZybiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/DWDvrfAVFyJCcrsOC2/giphy.gif)

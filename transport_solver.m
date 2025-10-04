@@ -22,6 +22,7 @@ if ~multivalued
     % remove any tbreaks that are after t(end)
     I = tbreaks > t(end); tbreaks(I) = []; xi(I) = [];
 end
+% tbreaks
 
 if multivalued || isempty(tbreaks)
     % We need not worry about the wave breaking, so do upwind/downwind with
@@ -171,8 +172,11 @@ for j=1:n+1
         X(k,1+(j-1)*NPart:j*NPart-1) = chebynodes(partition(k,j), partition(k,j+1), NPart-1);
         X(k,[1+(j-1)*NPart,j*NPart-1]) = bounds+c(phi(bounds))*t(k);
 
-        % Characteristic's initial values
-        XI(k,1+(j-1)*NPart+1:j*NPart-2) = arrayfun(@(a) fzero(@(xi0) reverse(xi0,a,t(k)), bounds), X(k,1+(j-1)*NPart+1:j*NPart-2) );
+        % Characteristic's initial values. bisec_vec is vVectorized fzero
+        % and saves a ton of time here!
+        % XI(k,1+(j-1)*NPart+1:j*NPart-2) = arrayfun(@(a) fzero(@(xi0) reverse(xi0,a,t(k)), bounds), X(k,1+(j-1)*NPart+1:j*NPart-2) );
+        % XI(k,1+(j-1)*NPart+1:j*NPart-2) = rtsafe_vec(@(xi0,a) reverse(xi0,a,t(k)), @(xi0,a) 1+cp(phi(xi0)).*phip(xi0).*t(k), X(k,1+(j-1)*NPart+1:j*NPart-2), bounds,1e-10);
+        XI(k,1+(j-1)*NPart+1:j*NPart-2) = bisec_vec(@(xi0,a) reverse(xi0,a,t(k)),X(k,1+(j-1)*NPart+1:j*NPart-2),bounds,1e-12);
         XI(k,[1+(j-1)*NPart,j*NPart-1]) = bounds;
     end
 end
@@ -193,18 +197,16 @@ U = phi(XI);
 
 % restore t
 t = t+t1;
+tbreaks = tbreaks + t1;
 
 
 
 function x = chebynodes(a,b,n)
-
     x = (a+b)/2 - (b-a)*cos(pi*(2*(1:n)-1)/2/n)/2;
-
 end
 
 % This function's roots yield a break s(t), along with xi1, xi2 from the
 % two characteristics that intersect at s(t).
-% TODO implement with the symbolic toolbox's vpa and solve with quadmath
 function [F,J] = equal_areas_function(xi,time)
     xi_1 = xi(1); xi_2 = xi(2);
     c1 = c(phi(xi_1)); c2 = c(phi(xi_2));
@@ -251,9 +253,98 @@ function J = dsecant_fun(epsilon,f,fp,fpp,t,xi_1,xi_2)
     end
 end
 
+end
+
+
 % taken from https://stackoverflow.com/a/50256298
 function out=neps(in)
 out=eps(in-eps(in));
 end
+
+
+
+
+
+function xstar = rtsafe_vec(f,fp,p,bdds,tol)
+% f is a 1D function with vector output
+% assume bdds = [a,b]
+% assume params = [c1;...;cn]
+%
+% I'm not 100% certain this implementation is bulletbroof...
+% tolerances less than 1e-10 tend to thrash.
+
+maxiter = 54;
+n = length(p);
+bdds = repmat(bdds,[n,1]);
+a = bdds(:,1)'; b = bdds(:,2)';
+
+x = (a+b)/2; fx = f(x,p); fpx = fp(x,p); dx = abs(b-a);
+for i=1:maxiter
+    % plot(p,a,p,x,p,b); legend("a","x","b"); pause(0.1)
+    % Newton's step
+    xn = x - fx./fpx;
+
+    % Check if
+    % 1. Newton's step is outside the bracket or
+    % 2. Newton's method is not decreasing the residual fast enough
+    cond2 = ( (a < xn & xn < b) & (abs(2*fx) < abs(dx.*fpx)) );
+    xold = x;
+    x = cond2.*xn + (~cond2).*(a+b)/2;
+    dx = abs(x-xold);
+
+    % Break condition. Check if the relative error is small enough
+    cond1 = dx < tol;
+    a = cond1.*xn + ~cond1.*a; b = cond1.*xn + ~cond1.*b;
+    if all(cond1), break; end
+
+    % update bracket
+    fx = f(x,p); fpx = fp(x,p);
+    a=x.*(fx <= 0) + a.*(fx > 0);
+    b=x.*(fx >= 0) + b.*(fx < 0);
+end
+if i==maxiter
+    norm(dx)
+    disp("Need a larger maxiter!!!")
+end
+
+xstar = xn;
+end
+
+
+
+function xstar = bisec_vec(f,p,bdds,tol)
+% assume bdds = [a,b]
+% assume params = [c1;...;cn]
+% TODO do a bit of argument checking. Reorient a and b if fb < 0 < fa.
+
+% Ensure bdds is a row vector
+% if size(bdds,2) ~= 2
+%     error("fail in rtsafe_vec")
+% end
+% if length(bdds) == 2
+%     bdds = repmat(bdds);
+% end
+
+maxiter = 53;
+n = length(p);
+bdds = repmat(bdds,[n,1]);
+a = bdds(:,1)'; b = bdds(:,2)';
+
+% fa = f(a,p); fb = f(b,p);
+for i=1:maxiter
+    c = (a+b)/2;
+    fc = f(c,p);
+
+    if all(abs(b-a) < tol), break; end
+
+    % update bracket
+    a=c.*(fc <= 0) + a.*(fc > 0);
+    b=c.*(fc >= 0) + b.*(fc < 0);
+end
+if i==maxiter
+    disp("Need a larger maxiter!!!")
+end
+
+xstar = a;
 
 end

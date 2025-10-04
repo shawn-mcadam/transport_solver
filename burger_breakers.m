@@ -9,7 +9,7 @@ objective = @(x) c_prime(phi(x)).*phi_prime(x);
 
 % TODO need another tol parameter for this... also check if the length of
 % each disjoint interval is significant. 
-% --- TODO maybe I can remove this tol bc we remove any tbreaks greater
+% --- TODO maybe I can remove this tol because we remove any tbreaks greater
 % than t(end)!!! -------- Can also check output before returning to see if
 % tb is not too large????
 i = find(objective(x0(2:end-1)) < -1e-8)+1;
