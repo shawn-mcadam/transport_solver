@@ -21,13 +21,11 @@ syms Sx Sepsilon Sux
 
 % Moving frame of reference removes the O(1) translation over time
 A(Sux,Sepsilon) = atanh(Sux/sqrt(1+Sepsilon*Sux^2));
-Sc(Sux) = simplify(sqrt(diff(A(Sux,Sepsilon),Sux)))-1;
+Sc(Sux) = simplify(sqrt(diff(A(Sux,Sepsilon),Sux)))-1; % the "-1" removes translation
 
 % Derive the initial conditions
 R0(Sx)  = exp(-Sx^2);
 L0(Sx)  = 0*Sx;
-
-r0 = matlabFunction(diff(R0,Sx));
 
 % define Q,c,cp to be in a moving frame of reference
 Q  = matlabFunction(int(Sc,Sux));

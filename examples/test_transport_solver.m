@@ -5,8 +5,8 @@ is_test = "test_";
 this_dir = is_test+"burgers/";
 breakcolor = "#A2142F";
 
-if exist(is_test+this_dir,'dir') ~= 7
-    mkdir(is_test+this_dir)
+if exist(this_dir,'dir') ~= 7
+    mkdir(this_dir)
 end
 
 
@@ -52,10 +52,12 @@ nexttile
 plot(chars,t,color="black",LineWidth=0.5); hold on
 plot(S,t,"x-",color=breakcolor,LineWidth=1,MarkerSize=1.75);
 yline(tbreaks); hold off; xlim tight; ylim tight
+title("Characteristics")
 nexttile
-plot(X,t,color="black",LineWidth=0.5); hold on
+pcolor(X,t,U,FaceColor="none"); hold on
 plot(S,t,"x-",color=breakcolor,LineWidth=1,MarkerSize=1.75);
 yline(tbreaks); hold off; xlim tight; ylim tight
+title("Mesh")
 
 % fine mesh of single valued solution
 Nmesh = 350; a = -5; b = 7; tf = 15;
@@ -78,6 +80,8 @@ figure
 residual = arrayfun(@(i) trapz(X(i,~isnan(X(1,:))),U(i,~isnan(X(1,:)))),1:length(t));
 plot(t,residual-residual(1)); hold on; xline(tbreaks); hold off
 title("$\int_{-\infty}^\infty u(x,t) \mathrm{d}x - " + string(residual(1)) + "$");
+
+
 
 
 %% tricky test example: u_t - 3u^2u_x = 0
@@ -114,14 +118,14 @@ title("$\int_{-\infty}^\infty u(x,t) \mathrm{d}x - " + string(residual(1)) + "$"
 %% I am curious: u_t - sin(u)u_x = 0
 Q = @(u) -cos(u); c = @(u) sin(u); cp = @(u) cos(u);
 % a=1.9; % only 1 break
-% a=1.946; % barely two breaks
+% a=1.947; % barely two breaks
 a=2.2; % difficult confluence
 % a = 5; % Impossible break
 phi = @(x) a*exp(-x.^2); phip = @(x) -2*a*x.*exp(-x.^2);
 
-Nmesh = 102; a = -2.5; b = 6;
+Nmesh = 102; a = -2.5; b = 7.5;
 x0 = linspace(a,b,Nmesh);
-t0 = linspace(0,9,Nmesh);
+t0 = linspace(0,7.5,Nmesh);
 tic
 [X,t,U,S,tbreaks,partition,XI] = transport_solver(Q,c,cp,phi,phip,x0,t0,false);
 test5_time = toc
@@ -163,7 +167,9 @@ gifname = 'exp_profile_sin_flux.gif';
 for k = 1:length(t)
     plot(X(k,:), U(k,:)); hold on
     for i = find(tbreaks < t(k))
-    plot([X(k,Ijump(i)-1);X(k,Ijump(i)+1)], [U(k,Ijump(i)-1);U(k,Ijump(i)+1)],'--',color=[0.7,0.7,0.7])
+        Xjumps=[X(k,Ijump(i)-1);X(k,Ijump(i)+1)]; Xjumps(isnan(Xjumps))=[];
+        Ujumps=[U(k,Ijump(i)-1);U(k,Ijump(i)+1)]; Ujumps(isnan(Ujumps))=[];
+        plot(Xjumps, Ujumps,'--',color=[0.7,0.7,0.7])
     end
     hold off
 
@@ -183,7 +189,7 @@ phi = @(x) sin(x); phip = @(x) cos(x);
 
 Nmesh = 100; a = -2*pi; b = 2*pi;
 x0 = linspace(a,b,Nmesh);
-t0 = linspace(0,5,Nmesh);
+t0 = linspace(0,13,Nmesh);
 tic
 [X,t,U,S,tbreaks,~,XI] = transport_solver(Q,c,cp,phi,phip,x0,t0,false);
 test4 = toc
@@ -211,7 +217,6 @@ xlim tight; ylim tight;
 hold off
 
 
-
 %%
 figure
 pause(1e-5)
@@ -231,53 +236,3 @@ for k = 1:length(t)
     if k == 1, gif(gifname,'nodither','DelayTime',mindelay); else, gif; end
 end
 movefile(gifname, this_dir);
-
-
-
-
-%% Test solving uncoupled systems over compatible meshes.
-%   u_{tt} = (A(u_x))_x
-% is approximately the sum L + R where L and R move along the PDE's
-% characteristics and do not interact. The initial conditions are
-% constructed such that $u(x,0)=e^{-x^2}$ and $u_t(x,0)=-2u_x(x,0)$ to
-% order epsilon
-clearvars; clc
-
-epsilon = 0.5;
-Q  = @(ux) (asinh(sqrt(epsilon)*ux)/sqrt(epsilon) + ux.*sqrt(1+epsilon*ux.^2))/2;
-c  = @(ux) sqrt(1+epsilon*ux.^2);
-cp = @(ux) epsilon*ux./sqrt(1+epsilon*ux.^2);
-fluxes = {{@(ux) -Q(ux), @(ux) -c(ux), @(ux) -cp(ux)}, {Q,c,cp}};
-
-% Initial conditions for L and R. These are output from
-%   [L0,R0] = nhyperbolic_characteristic_ICs(A,n,u0,u0t)
-% after differentiating
-% R0p  = @(x) -2*x.*exp(-x.^2) + 2*epsilon*x.*(3*x.^2 + 1).*exp(-3*x.^2)/9;
-% R0pp = @(x) 2*(2*x.^2-1).*exp(-x.^2) + -2*epsilon*x.^2.*(2*x.^2 - 1).*exp(-3*x.^2);
-% L0p  = @(x) -2*epsilon*x.^3.*exp(-3*x.^2)/3;
-% L0pp = @(x) 2*epsilon*x.^2.*(2*x.^2 - 1).*exp(-3*x.^2);
-R0p  = @(x) -x.*exp(-x.^2);
-R0pp = @(x) (2*x.^2-1).*exp(-x.^2);
-L0p  = R0p;
-L0pp = R0pp;
-ICs  = {{L0p,L0pp},{R0p,R0pp}};
-
-Nmesh = 100; a = -8; b = 8;
-x0 = linspace(a,b,Nmesh); t0 = linspace(0,20,Nmesh);
-tic
-[X,t,LR,S,tbreaks,partition,XI] = transport_solver_v2(fluxes,ICs,x0,t0,false);
-% [X,t,LR,S,tbreaks] = transport_solver(fluxes{1}{1},fluxes{1}{2},fluxes{1}{3},ICs{1}{1},ICs{1}{2},x0,t0,false);
-% [X,t,LR,S,tbreaks] = transport_solver(fluxes{2}{1},fluxes{2}{2},fluxes{2}{3},ICs{2}{1},ICs{2}{2},x0,t0,false);
-toc
-
-%%
-figure
-plot(X(1,:),LR(1,:,1),X(end,:),LR(end,:,1))
-figure
-plot(X(1,:),LR(1,:,2),X(end,:),LR(end,:,2))
-
-% L and R were solved over the same mesh so pointwise operations between
-% them are easy to accomplish (wow so expressive!)
-% U = LR(1)+LR(2);
-
-
