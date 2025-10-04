@@ -1,9 +1,28 @@
 function [X,t,U,S,tbreaks,partition,XI] = transport_solver(Q,c,cp,phi,phip,x0,t,multivalued)
-% Solve the 1st-order quasilinear PDE u_t + c(u)u_x = 0 using the method of
-% lines.
+% transport_solver - Solve a 1st-order quasilinear PDE of the form
+% u_t + c(u)u_x = 0 using the method of characteristics.
+% 
+% Syntax
+%   [X,t,U,S,tbreaks,partition,XI] = transport_solver(Q,c,cp,phi,phip,x0,t,multivalued)
+%
+% Input Arguments
+%   Q,c,cp - Flux and its derivatives
+%   phi,phip - Initial condition and its derivative
+%   x0 - Dictates domain boundaries & total number of space steps
+%   t - Time mesh
+%   multivalued - If true then solver does not check for or correct breaks
+%
+% Output Arguments
+%   X - Nonuniform spatial mesh
+%   t - Time mesh with break times appended
+%   U - 2D array dictating solution values on each mesh point: U(time, space)
+%   S - Locations of each break (NaN until the wave breaks): S(time,j-th break)
+%   tbreaks - Times each break occurs
+%   partition - S along with leftmost and rightmost characteristics
+%   XI - Initial values for each characteristic curve
 
-% TODO validate the user's arguments: Q, c, cp, u0, and u0p must all be
-% functions... multivalued is a bool.
+% TODO validate the user's arguments: Q, c, cp, phi, and phip must all be
+% functions taking a single argument... multivalued is a bool.
 % TODO find every sign change in c(phi(x))*phip(x) automatically (maybe
 % just make each function argument into a chebfun?)
 % TODO if we allow tracking special values then they should be handled
