@@ -9,3 +9,4 @@ The example files test the accuracy in our computed solutions. This includes a c
 1. The implementation of the method of lines from "Invariant Conservation Law-Preserving Discretizations of Linear and Nonlinear Wave Equations" by Alexei et. al. This uses a stencil designed specifically to respect conserved quanitites of a second-order equation $u_{tt}=(1+\epsilon u_x^2)u_{xx}.$
 2. PyClaw's classical solver (second-order Godunov-type finite volume method based on Riemann solvers). The Riemann solver is adapted from [this example from Clawpack's gallary](https://www.clawpack.org/gallery/pyclaw/gallery/stegoton.html).
 
+[small_t_rchars-eps-converted-to.pdf](https://github.com/user-attachments/files/22690786/small_t_rchars-eps-converted-to.pdf)
