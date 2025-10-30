@@ -1,5 +1,4 @@
-
-function [t,x,u,ux,ut,tb] = hybrid_solver(Q,c,cp,G,L0,R0,tfinal,tswitch,Nt,Nx,xbuf)
+function [t,x,u,ux,ut,tb,S] = LR_sum_solver(Q,c,cp,G,L0,R0,tfinal,tswitch,Nt,Nx,xbuf)
 
 % equally spaced time steps!
 t = linspace(0,tfinal,Nt)';
@@ -18,7 +17,7 @@ par.xbuf   = xbuf;
 par.domain = [-par.tspan(end)-par.xbuf, par.tspan(end)+par.xbuf, par.N];
 % the system of ODEs shouldn't be stiff 
 par.solver = @ode78; % ode78 appears to be the fastest for this problem
-par.options = odeset(RelTol=1e-13, AbsTol=1e-13);
+par.options = odeset(RelTol=1e-10, AbsTol=1e-10);
 
 tic
 [tmol,xmol,U] = MoL1D(par.solver, par.PDE, par.tspan, par.domain, par.ICs, par.options);
@@ -29,18 +28,22 @@ dx = xmol(2)-xmol(1);
 L1 = cumtrapz(xmol,Lx1,2);
 R1 = cumtrapz(xmol,Rx1,2);
 ux1 = Lx1+Rx1;
-u1 = L1+R1;
+u1  = L1+R1;
 ut1 = gradient(u1,dt);
 
 
 % transport_solver requires the initial conditions be functions (not lists
 % of discrete points), so using the solution from MoL is a bit tricky. We
 % will build Chebfuns from the equally spaced data and differentiate them
-Lxinterp = griddedInterpolant(xmol,Lx1(end,:),'linear','nearest');
-Lxxinterp = griddedInterpolant(xmol,gradient(Lx1(end,:),dx),'linear','nearest');
 
-Rxinterp = griddedInterpolant(xmol,Rx1(end,:),'linear','nearest');
-Rxxinterp = griddedInterpolant(xmol,gradient(Rx1(end,:),dx),'linear','nearest');
+% TODO try pchip, makima, or spline to see if the random spikes disappear...
+% interp_style = 'linear';
+interp_style = 'pchip';
+Lxinterp = griddedInterpolant(xmol,Lx1(end,:),interp_style,'nearest');
+Lxxinterp = griddedInterpolant(xmol,gradient(Lx1(end,:),dx),interp_style,'nearest');
+
+Rxinterp = griddedInterpolant(xmol,Rx1(end,:),interp_style,'nearest');
+Rxxinterp = griddedInterpolant(xmol,gradient(Rx1(end,:),dx),interp_style,'nearest');
 
 % Restrict the domains of L and R
 Ldomain = xmol; Rdomain = xmol;
@@ -81,7 +84,7 @@ tb = uniquetol([tb_l, tb_r],4*eps);
 x2 = cell(length(ttrans)-1,1); u2 = cell(length(ttrans)-1,1);
 ux2 = cell(length(ttrans)-1,1); ut2 = cell(length(ttrans)-1,1);
 for i = 1:length(ttrans)-1
-    % Splitting the domain like this also removes NaNs
+    % Splitting the domain about 0 like this also removes NaNs
     idl = Xl(i+1,:) < 0;
     idr = Xr(i+1,:) > 0;
     x2{i} = [Xl(i+1,idl),Xr(i+1,idr)];
@@ -94,7 +97,7 @@ x = [repmat(mat2cell(xmol,1,length(xmol)),[length(tmol),1]); x2];
 u = [mat2cell(u1,ones(1,length(tmol)),length(xmol)); u2];
 ux = [mat2cell(ux1,ones(1,length(tmol)),length(xmol)); ux2];
 ut = [mat2cell(ut1,ones(1,length(tmol)),length(xmol)); ut2];
-
+S = [sl,sr];
 
 end
 

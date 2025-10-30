@@ -3,7 +3,7 @@
 clearvars; clc; close all;
 config_figures;
 this_dir = "interaction_free_dynamics/";
-if ~exist(this_dir, 'dir')
+if ~exist(this_dir,'dir')
     mkdir(this_dir)
 end
 breakcolor = "#A2142F";
@@ -207,7 +207,6 @@ colormap summer
 view(18,13)
 
 
-% TODO I computed the envelopes wrong here
 
 nexttile
 xmax = zeros(1,length(t)); umax = xmax;
@@ -338,38 +337,3 @@ for k = 1:length(tsub)
 end
 movefile(gifname, this_dir);
 
-
-
-
-
-
-%% TODO move these functions to their own MoL related subdirectory & fix load_parameters
-function S = jac_linear_sparsity(n,m)
-    S = [sparse(zeros(n*(m-1),n)), speye(n*(m-1),n*(m-1));
-         repmat(spdiags([1 -2 1],-1:1,n,n),1,m)];
-end
-
-% Ensure for u(x,t) that u(0,t) = u(L,t).
-function [xfor,xint,xbac] = periodic_BCs(Nx)
-    xfor = [Nx,1:Nx-1]; xint = 1:Nx; xbac = [2:Nx,1];
-end
-
-function u_ut = quasilinear_2nd_order(A_prime, boundaries, h, ~, u_ut1)
-% odeXX gives u_ut1 as a long column vector. This code is easier to
-% reason with if we reinterpret u_ut as a 2D matrix:
-u_ut = reshape(u_ut1,[],2); Nx = size(u_ut,1);
-
-% construct indices that ensure periodic boundary conditions are satisfied
-[xfor,xint,xbac] = boundaries(Nx);
-ux   = (u_ut(xfor,1) - u_ut(xbac,1))/(2*h);
-uxx  = (u_ut(xfor,1) + u_ut(xbac,1) - 2*u_ut(xint,1))/h^2;
-
-% Update the PDE on the interior of the domain
-u_ut(xint,2) = A_prime(ux).*uxx;
-% u_ut(xint,2) = (A(ux(xfor,1)) - A(ux(xbac,1)))/(2*h);
-
-% copy ut into u's place
-u_ut(:,1) = reshape(u_ut1(Nx+1:end),Nx,1);
-% reshape u_ut to build a long column vector as ode23 expects
-u_ut = reshape(u_ut,Nx*2,1);
-end

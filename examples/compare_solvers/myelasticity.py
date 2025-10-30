@@ -21,6 +21,24 @@ Note that the density and bulk modulus may depend explicitly on x.
 from scipy.integrate import quad
 import numpy as np
 
+
+# Default variables
+if __name__=="__main__":
+    if 'problem' not in globals():
+        problem = 1
+    if 'tf' not in globals():
+        tf = 35
+    if 'a' not in globals():
+        a = -tf-4
+    if 'b' not in globals():
+        b = tf+4
+    if 'Ntsteps' not in globals():
+        Ntsteps = int(tf)
+    if 'ncells' not in globals():
+        ncells = 250
+
+
+
 def qinit(state,c=1,M=0.5):
     x = state.grid.x.centers
     k = 1.5
@@ -49,9 +67,10 @@ def setaux(x,rho=1,c=1,M=0.5):
     return aux
 
 
-# solver_type=classic
+# solver_type='classic'
+# solver_type='sharpclaw'
 def setup(use_petsc=0,solver_type='classic',outdir='./_output',
-          tfinal=tf, num_output_times=Ntsteps):
+          tfinal=tf, num_output_times=Ntsteps, cells_per_layer=ncells):
     #from clawpack import riemann
     from myelasticity_riemannsolver import nonlinear_elasticity_1D
 
@@ -80,7 +99,7 @@ def setup(use_petsc=0,solver_type='classic',outdir='./_output',
 
     #xlower=a; xupper=b
     #xlower=-tfinal+2; xupper=tfinal+6.
-    cells_per_layer=1000; mx=int(round(b-a))*cells_per_layer
+    mx=int(round(b-a))*cells_per_layer
     x = pyclaw.Dimension(a,b,mx,name='x')
     domain = pyclaw.Domain(x)
     state = pyclaw.State(domain,solver.num_eqn,num_aux=3)
@@ -127,21 +146,6 @@ def setplot(plotdata):
 
 if __name__=="__main__":
     from clawpack.pyclaw.util import run_app_from_main
-    if 'problem' not in globals():
-        problem = 1
-    if 'tf' not in globals():
-        tf = 35
-    if 'a' not in globals():
-        a = -tf-2
-    if 'b' not in globals():
-        b = tf+2
-    if 'Ntsteps' not in globals():
-        Ntsteps = int(tf)+1
-    #if 'Nxsteps' not in globals():
-    #    Nxsteps = 1000
-
-
-
     output = run_app_from_main(setup,setplot)
     #from clawpack.pyclaw import plot
     #plot.html_plot()

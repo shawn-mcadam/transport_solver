@@ -18,52 +18,57 @@ Q = @(u) u.^2/2; c = @(u) u; cp = @(u) 1;
 phi = @(x) exp(-x.^2); phip = @(x) -2*x.*exp(-x.^2);
 
 % fine mesh of single valued solution
-Nmesh = 350; a = -6; b = 8; tf = 14;
+Nmesh = 100; a = -4; b = 8; tf = 14;
 x0 = linspace(a,b,Nmesh); t0 = linspace(0,tf,Nmesh);
-[X,t,U,S,tbreaks] = transport_solver(Q,c,cp,phi,phip,x0,t0,false);
+[X,t,U,S,tbreaks,~,XI] = transport_solver(Q,c,cp,phi,phip,x0,t0,false);
 idxs = ~isnan(X(1,:)); Ijump = find(isnan(X(1,:)));
 
-%% compute the characteristics
-chars = XI(end,idxs) + c(r0(XI(end,idxs))).*t;
-for i=2:15:length(t)
-    chars(1:i,end+1:end+2*numel(Ijump)) = XI(i,[Ijump-1,Ijump+1]) + c(r0(XI(i,[Ijump-1,Ijump+1]))).*t(1:i);
+% compute the characteristics
+chars = XI(end,idxs) + c(phi(XI(end,idxs))).*t;
+for i=2:4:length(t)
+    chars(1:i,end+1:end+2*numel(Ijump)) = XI(i,[Ijump-1,Ijump+1]) + c(phi(XI(i,[Ijump-1,Ijump+1]))).*t(1:i);
     chars(i+1:end,end-2*numel(Ijump):end) = NaN;
 end
 chars = sortrows(chars')';
 
 
-f = figure; f.Position = [680 458 900 260];
-pause(1e-5)
-mindelay = 0.025;
-gifname = 'burgers_gaussian.gif';
-for k = 1:length(t)
-    tiledlayout
-    nexttile
-    pcolor(X,t,U,EdgeColor='none'); hold on
-    % plot(X,t,color="black",LineWidth=0.5); % computational mesh
-    plot(chars,t,color="black",LineWidth=0.5); % characteristics mesh
-    plot(S,t,"-",color=breakcolor,LineWidth=2);
-    yline(tbreaks);
-    colormap summer
-    colorbar
-    xlabel("$x$"); ylabel("$t$")
-    xlim tight; ylim tight
-    hold off
+f = figure; f.Position = [680 458 650 380];
+pcolor(X,t,U,EdgeColor='none'); hold on
+% plot(X,t,color="black",LineWidth=0.5); % computational mesh
+plot(chars,t,color="black",LineWidth=0.5); % characteristics mesh
+plot(S,t,"-",color=breakcolor,LineWidth=2);
+yline(tbreaks);
+colormap summer
+colorbar
+xlabel("$x$"); ylabel("$t$")
+xlim tight; ylim tight
+hold off
 
-    nexttile
+%%
+f = figure; f.Position = [680 458 900 260];
+% mindelay = 0.025;
+% gifname = 'burgers_gaussian.gif';
+
+v = VideoWriter("burgers_gaussian.avi",'Motion JPEG AVI');
+v.Quality=100;
+open(v);
+for k = 1:length(t)
     plot(X(k,:), U(k,:),color=coloru); hold on
     for i = find(tbreaks < t(k))
     plot([X(k,Ijump(i)-1);X(k,Ijump(i)+1)], [U(k,Ijump(i)-1);U(k,Ijump(i)+1)],'--',color=[0.7,0.7,0.7])
     end
     hold off
 
-    xlim tight; ylim([0,1])
+    xlim([a,b]); ylim([0,1])
     title("$t="+string(round(t(k),2))+"$")
     legend("$u$")
 
-    if k == 1, gif(gifname,'nodither','DelayTime',mindelay); else, gif; end
+    frame = getframe(gcf);
+    writeVideo(v,frame)
+    % if k == 1, gif(gifname,'nodither','DelayTime',mindelay); else, gif; end
 end
-movefile(gifname, this_dir);
+close(v)
+% movefile(gifname, this_dir);
 
 
 
@@ -122,8 +127,8 @@ pause(1e-5)
 mindelay = 0.025;
 % gifname = 'string_gaussian.gif';
 
-v = VideoWriter("string_gaussian.avi",'MPEG-4');
-% v.Quality=100;
+v = VideoWriter("string_gaussian.avi",'Motion JPEG 2000');
+v.Quality=100;
 open(v);
 % for k = 1:length(t)
 for k = 1:50

@@ -84,7 +84,7 @@ title("$\int_{-\infty}^\infty u(x,t) \mathrm{d}x - " + string(residual(1)) + "$"
 
 
 
-%% tricky test example: u_t - 3u^2u_x = 0
+%% Tricky test example: u_t - 3u^2u_x = 0
 % This weak solution quickly violates the entropy condition t~0.35
 Q = @(u) -u.^3; c = @(u) -3*u.^2; cp = @(u) -6*u;
 phi = @(x) -2*x.*exp(-x.^2); phip = @(x) 2*(2*x.^2-1).*exp(-x.^2);
@@ -120,7 +120,7 @@ Q = @(u) -cos(u); c = @(u) sin(u); cp = @(u) cos(u);
 % a=1.9; % only 1 break
 % a=1.947; % barely two breaks
 a=2.2; % difficult confluence
-% a = 5; % Impossible break
+% a = 5; % An impossible break must be prevented
 phi = @(x) a*exp(-x.^2); phip = @(x) -2*a*x.*exp(-x.^2);
 
 Nmesh = 102; a = -2.5; b = 7.5;

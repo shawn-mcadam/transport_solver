@@ -184,15 +184,17 @@ for j=1:n+1
             break
         end
 
-        % Bounds for fzero
+        % Bounds for fzero. TODO can bounds not be unique sometimes?
         bounds = [init_guess(k,2*j-1),init_guess(k,2*j)-neps(init_guess(k,2*j))];
 
         % Spatial mesh built from the partition
         X(k,1+(j-1)*NPart:j*NPart-1) = chebynodes(partition(k,j), partition(k,j+1), NPart-1);
-        X(k,[1+(j-1)*NPart,j*NPart-1]) = bounds+c(phi(bounds))*t(k);
+        % X(k,[1+(j-1)*NPart,j*NPart-1]) = bounds+c(phi(bounds))*t(k);
+        X(k,[1+(j-1)*NPart,j*NPart-1]) = [partition(k,j)+eps(partition(k,j)),partition(k,j+1)-neps(partition(k,j+1))];
 
-        % Characteristic's initial values. bisec_vec is vVectorized fzero
-        % and saves a ton of time here!
+        % Characteristic's initial values. Using bisec_vec instead of fzero
+        % saves a ton of time here because it's vectorized! Maybe make
+        % rtsafe_vec do some iteractions of bisec_vec before Newtons...?
         % XI(k,1+(j-1)*NPart+1:j*NPart-2) = arrayfun(@(a) fzero(@(xi0) reverse(xi0,a,t(k)), bounds), X(k,1+(j-1)*NPart+1:j*NPart-2) );
         % XI(k,1+(j-1)*NPart+1:j*NPart-2) = rtsafe_vec(@(xi0,a) reverse(xi0,a,t(k)), @(xi0,a) 1+cp(phi(xi0)).*phip(xi0).*t(k), X(k,1+(j-1)*NPart+1:j*NPart-2), bounds,1e-10);
         XI(k,1+(j-1)*NPart+1:j*NPart-2) = bisec_vec(@(xi0,a) reverse(xi0,a,t(k)),X(k,1+(j-1)*NPart+1:j*NPart-2),bounds,1e-12);
