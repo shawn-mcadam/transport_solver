@@ -37,7 +37,7 @@ cp = matlabFunction(subs(diff(Sc,Sux),Sepsilon,epsilon));
 G = @(l,lx,r,rx) epsilon*(((r+2*l).*r.*lx + (2*r+l).*l.*rx) ./ (c(l)+c(r)));
 L0 = subs(L0,Sepsilon,epsilon); R0 = subs(R0,Sepsilon,epsilon);
 
-tfinal = 35; tswitch = 1.95; Nt = 10*floor(tfinal)+1; Nx = 80000; xbuf = 5;
+tfinal = 35; tswitch = 2; Nt = 10*floor(tfinal)+1; Nx = 80000; xbuf = 5;
 
 
 % (equally spaced!) time steps split between MoL and transport_solver
